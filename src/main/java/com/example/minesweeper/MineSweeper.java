@@ -1,0 +1,137 @@
+package com.example.minesweeper;
+
+import javafx.scene.image.Image;
+
+import java.util.Random;
+
+public class MineSweeper {
+    private Markers[][] mineSweeper;
+    private int width;
+    private int height;
+    private int bombAmount;
+
+    public Markers getStatus(int x, int y){
+        if(!(x >= this.width || y >= this.height || x < 0 || y < 0)){
+            return this.mineSweeper[x][y];
+        }
+        return null;
+    }
+
+    public void gameSetup(String size){
+        switch(size){
+            case "Beginner": this.bombAmount = 10;
+                        this.width = 8;
+                        this.height = 8;
+                        this.mineSweeper = new Markers[8][8];
+                        this.initCells();
+                        this.setBomb();
+                        break;
+            case "Intermediate": this.bombAmount = 40;
+                        this.width = 16;
+                        this.height = 16;
+                        this.mineSweeper = new Markers[16][16];
+                        this.initCells();
+                        this.setBomb();
+                        break;
+            case "Expert": this.bombAmount = 99;
+                        this.width = 30;
+                        this.height = 16;
+                        this.mineSweeper = new Markers[30][16];
+                        this.initCells();
+                        this.setBomb();
+                        break;
+        }
+
+    }
+
+    public void initCells(){
+        for(int i = 0; i < this.width; i++){
+            for(int j = 0; j < this.height; j++){
+                this.mineSweeper[i][j] = Markers.Empty;
+            }
+        }
+    }
+
+    public int getHeight(){
+        return this.height;
+    }
+
+    public int getWidth(){
+        return this.width;
+    }
+
+    public void setStatus(int x, int y, Markers value){
+        if(x > this.width || y > this.height || x < 0 || y < 0){
+            return;
+        }
+        if(!this.isBomb(x, y)){
+            this.mineSweeper[x][y] = value;
+        }
+    }
+
+    private void setBomb(){
+        Random rand = new Random();
+        int bombsPlaced = 0;
+        while(bombsPlaced < this.bombAmount){
+            int row = rand.nextInt(this.width);
+            int column = rand.nextInt(this.height);
+            if(this.mineSweeper[row][column] == Markers.Bomb){
+                continue;
+            }
+            this.mineSweeper[row][column] = Markers.Bomb;
+            bombsPlaced++;
+        }
+    }
+
+    public int bombsLeft(){
+        int bombs = 0;
+        for(int i = 0; i < this.width; i++){
+            for(int j = 0; j < this.height; j++){
+                if(this.mineSweeper[i][j].equals(Markers.Bomb)){
+                    bombs += 1;
+                }
+            }
+        }
+        return bombs;
+    }
+    public boolean isBomb(int x, int y){
+        Markers current = this.mineSweeper[x][y];
+        if(current == (Markers.Bomb)){
+            return true;
+        }
+        return false;
+    }
+
+
+}
+
+enum Markers{
+    Empty (" "),
+    One ("1"),
+    Two ("2"),
+    Three ("3"),
+    Four ("4"),
+    Five ("5"),
+    Six ("6"),
+    Bomb ("B"),
+    Flag ("X");
+
+    private final String marker;
+    private final Image bomb = new Image("images/bomb.png");
+    Markers(String _marker){
+        this.marker = _marker;
+    }
+
+    public String getMarker(){
+        return this.marker;
+    }
+    public Image getImage(){
+        return bomb;
+    }
+
+    private static final Markers[] values = values();
+
+    public Markers next(){
+        return values[this.ordinal() + 1 % values.length];
+    }
+}
