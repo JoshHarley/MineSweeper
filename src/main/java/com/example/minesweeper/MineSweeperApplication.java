@@ -99,9 +99,10 @@ public class MineSweeperApplication extends Application {
                                 logic.goBoom(buttons);
                             } else {
                                 ArrayList<Button> emptyButtons = logic.calculateAllSurroundings(row, column, this.buttonLocation);
-                                for (Button emptyButton : emptyButtons) {
-                                    emptyButton.setDisable(true);
-
+                                if(btn.getText().equals(Markers.Empty.getMarker())) {
+                                    for (Button emptyButton : emptyButtons) {
+                                        emptyButton.setDisable(true);
+                                    }
                                 }
 
                                 btn.setText(this.game.getStatus(row, column).getMarker());
