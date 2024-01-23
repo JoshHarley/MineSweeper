@@ -2,6 +2,8 @@ package com.example.minesweeper;
 
 import javafx.scene.image.Image;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Random;
 
 public class MineSweeper {
@@ -9,6 +11,7 @@ public class MineSweeper {
     private int width;
     private int height;
     private int bombAmount;
+    private HashMap<Integer[], Markers> previousStatus;
 
     public Markers getStatus(int x, int y){
         if(!(x >= this.width || y >= this.height || x < 0 || y < 0)){
@@ -23,6 +26,7 @@ public class MineSweeper {
                         this.width = 8;
                         this.height = 8;
                         this.mineSweeper = new Markers[8][8];
+                        this.previousStatus = new HashMap<>();
                         this.initCells();
                         this.setBomb();
                         break;
@@ -30,6 +34,7 @@ public class MineSweeper {
                         this.width = 16;
                         this.height = 16;
                         this.mineSweeper = new Markers[16][16];
+                        this.previousStatus = new HashMap<>();
                         this.initCells();
                         this.setBomb();
                         break;
@@ -37,6 +42,7 @@ public class MineSweeper {
                         this.width = 30;
                         this.height = 16;
                         this.mineSweeper = new Markers[30][16];
+                        this.previousStatus = new HashMap<>();
                         this.initCells();
                         this.setBomb();
                         break;
@@ -67,6 +73,21 @@ public class MineSweeper {
         if(!this.isBomb(x, y)){
             this.mineSweeper[x][y] = value;
         }
+    }
+
+    public void setPreviousStatus(int x, int y, Markers status){
+        this.previousStatus.put(new Integer[]{x, y}, status);
+    }
+
+    public Markers getPreviousStatus(int x, int y){
+        Integer[] previous = new Integer[] {x, y};
+        Markers resetMarker = Markers.Empty;
+        for(Integer[] previousMarker: this.previousStatus.keySet()){
+            if(Arrays.equals(previous, previousMarker)){
+                resetMarker = this.previousStatus.get(previousMarker);
+            }
+        }
+        return resetMarker;
     }
 
     private void setBomb(){
@@ -100,6 +121,10 @@ public class MineSweeper {
             return true;
         }
         return false;
+    }
+
+    public int getBombAmount(){
+        return this.bombAmount;
     }
 
 

@@ -2,23 +2,20 @@ package com.example.minesweeper;
 
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 public class MineSweeperLogic {
     private final MineSweeper game;
-    //Image image = new Image("images/bomb.png");
-//    private BackgroundImage bombBackGroundImage = new BackgroundImage(image);
-//    private Background bomb = new Background()
-
     public MineSweeperLogic(MineSweeper _game){
         this.game = _game;
     }
 
+    int bombAmount = game.getBombAmount();
     public void surroundingCheck(int x, int y) {
         Markers bombs = Markers.Empty;
         if(game.getStatus(x + 1, y) == Markers.Bomb){
@@ -135,33 +132,39 @@ public class MineSweeperLogic {
         return coords;
     }
 
-    public void goBoom(ArrayList<Button> buttons){
-        ArrayList<Button> bombs = new ArrayList<>();
-        for(Button btn: buttons){
-            if(btn.getText().equals(Markers.Bomb.getMarker())) {
-                bombs.add(btn);
-            }
-        }
+    public void goBoom(ArrayList<Button> bombs){
+        Image image = new Image("images/bomb.png");
+        BackgroundImage bombBackgroundImage = new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
+        Background bombBackground = new Background(bombBackgroundImage);
         for(Button bomb: bombs){
-            Image image = new Image("images/bomb.png");
-            ImageView bombImage = new ImageView(image);
-            BackgroundImage bombBackgroundImage = new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
-            Background bombBackground = new Background(bombBackgroundImage);
-            bombImage.setFitHeight(bomb.getPrefHeight());
-            bombImage.setFitWidth(bomb.getPrefWidth());
-            //bombImage.setPreserveRatio(true);
-            bomb.setDisable(true);
-            bomb.setText("");
-            //bomb.setGraphic(bombImage);
             bomb.setBackground(bombBackground);
         }
     }
 
-    public void setFlag(Button button){
-       // if(button.isPressed()){
-            Image image = new Image("images/bomb.png");
-            ImageView flagImage = new ImageView(image);
-            button.setGraphic(flagImage);
-       // }
+    public void setFlag(Button button, int row, int column, Map<Integer[], Button> buttonLocation){
+        Image image = new Image("images/flag.png");
+        BackgroundImage flagBackgroundImage = new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
+        Background flagBackground = new Background(flagBackgroundImage);
+        button.setBackground(flagBackground);
+        Integer[] loc = new Integer[]{row, column};
+        for(Integer[] key: buttonLocation.keySet()){
+            if(Arrays.equals(key, loc)){
+                game.setPreviousStatus(row, column, game.getStatus(row, column));
+            }
+        }
+        this.bombAmount--;
+        game.setStatus(row, column, Markers.Flag);
     }
+
+    public void removeFlag(Button button, int row, int column){
+        Markers beforeFlag = game.getPreviousStatus(row, column);
+        Image blankCellImage = new Image("images/basicCell.png");
+        BackgroundImage blankCellBackImage =new BackgroundImage(blankCellImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
+        Background blankCell = new Background(blankCellBackImage);
+        button.setBackground(blankCell);
+        this.bombAmount++;
+        game.setStatus(row, column, beforeFlag);
+    }
+
+
 }
