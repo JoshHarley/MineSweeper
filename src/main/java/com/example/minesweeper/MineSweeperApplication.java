@@ -4,7 +4,6 @@ import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -13,7 +12,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -39,15 +37,18 @@ public class MineSweeperApplication extends Application {
 
 
 
-    public void startGame(Stage stage) throws Exception {
+    public void startGame(Stage stage) {
+
+        //region Timer
         //Declare variables for timer
         Label timeLabel = new Label("0");
         AnimationTimer timer = new AnimationTimer() {
             private long timeStamp;
             private long time = 0;
-            private long fraction = 0;
+
             @Override
             public void start(){
+                long fraction = 0;
                 timeStamp = System.currentTimeMillis() - fraction;
                 super.start();
             }
@@ -67,6 +68,7 @@ public class MineSweeperApplication extends Application {
                 }
             }
         };
+        //endregion
 
         //setup for the start screen
         VBox startLayout = new VBox();
@@ -90,7 +92,10 @@ public class MineSweeperApplication extends Application {
         //setup for the game grid screen
         BorderPane gameLayout = new BorderPane();
         GridPane gameGrid = new GridPane();
+        gameGrid.setAlignment(Pos.CENTER);
+        Label bombsLeft = new Label();
         HBox topBox = new HBox();
+        topBox.setAlignment(Pos.CENTER_RIGHT);
         Button restart = new Button();
         restart.setPrefSize(40, 40);
         restart.setBackground(normalRestart);
@@ -98,15 +103,15 @@ public class MineSweeperApplication extends Application {
         HBox.setHgrow(region1, Priority.ALWAYS);
         Region region2 = new Region();
         HBox.setHgrow(region2, Priority.ALWAYS);
-        Label bombsLeft = new Label();
+
         topBox.getChildren().addAll(bombsLeft, region1, restart, region2, timeLabel);
-        topBox.setAlignment(Pos.CENTER_RIGHT);
-        Scene gameScene = new Scene(gameLayout);
+
+
 
         gameLayout.setCenter(gameGrid);
         gameLayout.setTop(topBox);
-        gameGrid.setAlignment(Pos.CENTER);
 
+        Scene gameScene = new Scene(gameLayout);
         bombsLeft.setFont(Font.font("Monospaced", 40));
 
 
@@ -118,7 +123,6 @@ public class MineSweeperApplication extends Application {
                         Button btn = new Button();
                         btn.setPrefSize(40, 40);
                         btn.setFont(Font.font("Monospaced", FontWeight.BOLD, 20));
-                        btn.setText(game.getStatus(i, j).getMarker());
                         btn.setBackground(blankCell);
                         btn.setVisible(true);
                         if (game.getStatus(i, j) == Markers.Bomb) {
@@ -130,46 +134,43 @@ public class MineSweeperApplication extends Application {
                         final int row = i;
                         final int column = j;
 
-                        btn.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                            @Override
-                            public void handle(MouseEvent mouseEvent) {
-                                MouseButton mouseButton = mouseEvent.getButton();
-                                if (mouseButton == MouseButton.PRIMARY) {
-                                    if (!(game.getStatus(row, column) == Markers.Flag)) {
-                                        gameStatus = game.isBomb(row, column);
-                                        if (gameStatus) {
-                                            logic.goBoom(bombs);
-                                            timer.stop();
-                                            restart.setBackground(loseRestart);
-                                            gameGrid.setMouseTransparent(true);
-                                        } else {
-                                            ArrayList<Button> emptyButtons = logic.calculateAllSurroundings(row, column, buttonLocation);
-                                            if (game.getStatus(row, column) == Markers.Empty) {
-                                                for (Button emptyButton : emptyButtons) {
-                                                    emptyButton.setBackground(flatCell);
-                                                }
-                                            }
-                                            btn.setBackground(flatCell);
-                                            btn.setText(game.getStatus(row, column).getMarker());
-                                        }
-                                    }
-                                }
-                                if (mouseButton == MouseButton.SECONDARY) {
-                                    if (!(game.getStatus(row, column) == Markers.Flag)) {
-                                        logic.setFlag(btn, row, column, buttonLocation);
-                                        bombsLeft.setText("" + game.getBombAmount());
-                                    } else if (game.getStatus(row, column) == Markers.Flag) {
-                                        logic.removeFlag(btn, row, column);
-                                        bombsLeft.setText("" + game.getBombAmount());
-                                    }
-                                }
-                                if (Integer.parseInt(bombsLeft.getText()) == 0 && Long.parseLong(timeLabel.getText()) > 1){
-                                    boolean win = logic.win(buttonLocation);
-                                    if(win) {
-                                        restart.setBackground(winRestart);
-                                        gameGrid.setMouseTransparent(true);
+                        btn.setOnMouseClicked(mouseEvent -> {
+                            MouseButton mouseButton = mouseEvent.getButton();
+                            if (mouseButton == MouseButton.PRIMARY) {
+                                if (!(game.getStatus(row, column) == Markers.Flag)) {
+                                    gameStatus = game.isBomb(row, column);
+                                    if (gameStatus) {
+                                        logic.goBoom(bombs);
                                         timer.stop();
+                                        restart.setBackground(loseRestart);
+                                        gameGrid.setMouseTransparent(true);
+                                    } else {
+                                        ArrayList<Button> emptyButtons = logic.calculateAllSurroundings(row, column, buttonLocation);
+                                        if (game.getStatus(row, column) == Markers.Empty) {
+                                            for (Button emptyButton : emptyButtons) {
+                                                emptyButton.setBackground(flatCell);
+                                            }
+                                        }
+                                        btn.setBackground(flatCell);
+                                        btn.setText(game.getStatus(row, column).getMarker());
                                     }
+                                }
+                            }
+                            if (mouseButton == MouseButton.SECONDARY) {
+                                if (!(game.getStatus(row, column) == Markers.Flag)) {
+                                    logic.setFlag(btn, row, column, buttonLocation);
+                                    bombsLeft.setText("" + game.getBombAmount());
+                                } else if (game.getStatus(row, column) == Markers.Flag) {
+                                    logic.removeFlag(btn, row, column);
+                                    bombsLeft.setText("" + game.getBombAmount());
+                                }
+                            }
+                            if (Integer.parseInt(bombsLeft.getText()) == 0 && Long.parseLong(timeLabel.getText()) > 1) {
+                                boolean win = logic.win(buttonLocation);
+                                if (win) {
+                                    restart.setBackground(winRestart);
+                                    gameGrid.setMouseTransparent(true);
+                                    timer.stop();
                                 }
                             }
                         });
@@ -180,10 +181,10 @@ public class MineSweeperApplication extends Application {
             }
         });
 
-
-
         startLayout.getChildren().addAll(message, difficultySelect, confirm);
         Scene startScreen = new Scene(startLayout);
+
+        //Restart button on click event - button should close down the current window and load up the start screen.
         restart.setOnMouseClicked((event) -> {
             stage.close();
             try {
@@ -192,6 +193,9 @@ public class MineSweeperApplication extends Application {
                 System.out.println("Error: " + e.getMessage());
             }
         });
+
+
+        //set title and start screen for game
         stage.setTitle("MineSweeper");
         stage.setScene(startScreen);
         stage.show();
@@ -201,6 +205,7 @@ public class MineSweeperApplication extends Application {
         Application.launch(MineSweeperApplication.class);
     }
 
+    //Override Application start function for restart button to action
     @Override
     public void start(Stage mainStage) throws Exception{
         startGame(mainStage);
