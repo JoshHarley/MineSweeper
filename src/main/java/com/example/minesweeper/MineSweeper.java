@@ -13,14 +13,8 @@ public class MineSweeper {
     private int bombAmount;
     private HashMap<Integer[], Markers> previousStatus;
 
-    public Markers getStatus(int x, int y){
-        if(!(x >= this.width || y >= this.height || x < 0 || y < 0)){
-            return this.mineSweeper[x][y];
-        }
-        return null;
-    }
 
-    public void gameSetup(String size){
+    public void gameSetup(String size, MineSweeperLogic logic){
         switch(size){
             case "Beginner": this.bombAmount = 10;
                         this.width = 8;
@@ -29,6 +23,7 @@ public class MineSweeper {
                         this.previousStatus = new HashMap<>();
                         this.initCells();
                         this.setBomb();
+                        this.setNumbers(logic);
                         break;
             case "Intermediate": this.bombAmount = 40;
                         this.width = 16;
@@ -37,6 +32,7 @@ public class MineSweeper {
                         this.previousStatus = new HashMap<>();
                         this.initCells();
                         this.setBomb();
+                        this.setNumbers(logic);
                         break;
             case "Expert": this.bombAmount = 99;
                         this.width = 30;
@@ -45,9 +41,9 @@ public class MineSweeper {
                         this.previousStatus = new HashMap<>();
                         this.initCells();
                         this.setBomb();
+                        this.setNumbers(logic);
                         break;
         }
-
     }
 
     public void initCells(){
@@ -65,14 +61,22 @@ public class MineSweeper {
     public int getWidth(){
         return this.width;
     }
+    public Markers getStatus(int x, int y){
+        if(!(x >= this.width || y >= this.height || x < 0 || y < 0)){
+            return this.mineSweeper[x][y];
+        }
+        return null;
+    }
 
     public void setStatus(int x, int y, Markers value){
         if(x > this.width || y > this.height || x < 0 || y < 0){
             return;
-        }
-        if(!this.isBomb(x, y)){
+        } else if (this.getStatus(x, y) == Markers.Bomb && value == Markers.Flag){
+            this.mineSweeper[x][y] = value;
+        } else if (this.getStatus(x, y) != Markers.Bomb) {
             this.mineSweeper[x][y] = value;
         }
+
     }
 
     public void setPreviousStatus(int x, int y, Markers status){
@@ -127,7 +131,21 @@ public class MineSweeper {
         return this.bombAmount;
     }
 
+    public void incrementBombAmount(){
+        this.bombAmount++;
+    }
 
+    public void decrementBombAmount(){
+        this.bombAmount--;
+    }
+
+    public void setNumbers(MineSweeperLogic logic){
+        for (int i = 0; i < this.getWidth(); i++) {
+            for (int j = 0; j < this.getHeight(); j++) {
+                logic.surroundingCheck(i, j);
+            }
+        }
+    }
 }
 
 enum Markers{

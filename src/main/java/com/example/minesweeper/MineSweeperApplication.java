@@ -1,5 +1,6 @@
 package com.example.minesweeper;
 
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,6 +16,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
@@ -29,11 +31,43 @@ public class MineSweeperApplication extends Application {
     Background blankCell = new Background(new BackgroundImage(new Image("images/basicCell.png"), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
 
     Background flatCell = new Background(new BackgroundImage(new Image("images/flatCell.png"), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
+    Background normalRestart = new Background(new BackgroundImage(new Image("images/smiley.png"), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
+    Background winRestart = new Background(new BackgroundImage(new Image("images/smiley_cool.png"), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
+    Background loseRestart = new Background(new BackgroundImage(new Image("images/smiley_rip.png"), BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false)));
 
+    boolean win = false;
 
 
 
     public void startGame(Stage stage) throws Exception {
+        //Declare variables for timer
+        Label timeLabel = new Label(" ");
+        AnimationTimer timer = new AnimationTimer() {
+            private long timeStamp;
+            private long time = 0;
+            private long fraction = 0;
+            @Override
+            public void start(){
+                timeStamp = System.currentTimeMillis() - fraction;
+                super.start();
+            }
+
+            @Override
+            public void stop(){
+                super.stop();
+            }
+            @Override
+            public void handle(long l) {
+                long newTime = System.currentTimeMillis();
+                if(timeStamp + 1000 <= newTime){
+                    long deltaT = (newTime - timeStamp) /1000;
+                    time += deltaT;
+                    timeStamp += 1000 * deltaT;
+                    timeLabel.setText(Long.toString(time));
+                }
+            }
+        };
+
         //setup for the start screen
         VBox startLayout = new VBox();
         startLayout.setPrefSize(300, 400);
@@ -42,29 +76,30 @@ public class MineSweeperApplication extends Application {
         startLayout.setPadding(new Insets(20, 20, 20, 20));
         Label message = new Label("Choose your difficulty");
         Button confirm = new Button("Confirm");
+        timeLabel.setPrefWidth(40);
+        timeLabel.setFont(Font.font("Monospaced", 40));
         ObservableList<String> options = FXCollections.observableArrayList("Beginner", "Intermediate", "Expert");
         final ComboBox<String> difficultySelect = new ComboBox<>(options);
         difficultySelect.setPromptText("Select difficulty");
-        difficultySelect.setEditable(true);
+        difficultySelect.setEditable(false);
         difficultySelect.setOnAction(event -> {
-                this.game.gameSetup(difficultySelect.getValue());
-                for(int i = 0; i < this.game.getWidth(); i++) {
-                    for (int j = 0; j < this.game.getHeight(); j++) {
-                        this.logic.surroundingCheck(i, j);
-                    }
-                }
-            }
-        );
+            this.game.gameSetup(difficultySelect.getValue(), logic);
+            timer.start();
+        });
 
         //setup for the game grid screen
         BorderPane gameLayout = new BorderPane();
-        gameLayout.setPrefSize(800, 400);
         GridPane gameGrid = new GridPane();
         HBox topBox = new HBox();
-        Button restart = new Button("restart");
-
+        Button restart = new Button();
+        restart.setPrefSize(40, 40);
+        restart.setBackground(normalRestart);
+        Region region1 = new Region();
+        HBox.setHgrow(region1, Priority.ALWAYS);
+        Region region2 = new Region();
+        HBox.setHgrow(region2, Priority.ALWAYS);
         Label bombsLeft = new Label();
-        topBox.getChildren().addAll(restart, bombsLeft);
+        topBox.getChildren().addAll(bombsLeft, region1, restart, region2, timeLabel);
         topBox.setAlignment(Pos.CENTER_RIGHT);
         Scene gameScene = new Scene(gameLayout);
 
@@ -77,57 +112,70 @@ public class MineSweeperApplication extends Application {
 
         confirm.setOnMouseClicked((event) -> {
             bombsLeft.setText("" + this.game.bombsLeft());
-            for(int i = 0; i < this.game.getWidth(); i++){
-                for(int j = 0; j < this.game.getHeight(); j++){
+            for (int i = 0; i < this.game.getWidth(); i++) {
+                for (int j = 0; j < this.game.getHeight(); j++) {
                     Button btn = new Button();
                     btn.setPrefSize(40, 40);
-                    btn.setFont(Font.font("Monospaced", 10));
+                    btn.setFont(Font.font("Monospaced", FontWeight.BOLD, 20));
+                    btn.setText(game.getStatus(i, j).getMarker());
                     btn.setBackground(blankCell);
                     btn.setVisible(true);
-                    //btn.setText(game.getStatus(i, j).getMarker());
-                    if(game.getStatus(i, j) == Markers.Bomb){
+                    if (game.getStatus(i, j) == Markers.Bomb) {
                         bombs.add(btn);
                     }
                     gameGrid.add(btn, i, j);
-                    //this.buttons.add(btn);
                     Integer[] locBtn = new Integer[]{i, j};
                     this.buttonLocation.put(locBtn, btn);
                     final int row = i;
                     final int column = j;
-                    btn.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                        @Override
-                        public void handle(MouseEvent mouseEvent) {
-                            MouseButton mouseButton = mouseEvent.getButton();
-                            if(mouseButton == MouseButton.PRIMARY) {
-                                if(!(game.getStatus(row, column) == Markers.Flag)) {
-                                    gameStatus = game.isBomb(row, column);
-                                    if (gameStatus) {
-                                        logic.goBoom(bombs);
-                                    } else {
-                                        ArrayList<Button> emptyButtons = logic.calculateAllSurroundings(row, column, buttonLocation);
-                                        if (game.getStatus(row, column) == Markers.Empty) {
-                                            for (Button emptyButton : emptyButtons) {
-                                                emptyButton.setDisable(true);
+                        btn.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                            @Override
+                            public void handle(MouseEvent mouseEvent) {
+                                MouseButton mouseButton = mouseEvent.getButton();
+                                if (mouseButton == MouseButton.PRIMARY) {
+                                    if (!(game.getStatus(row, column) == Markers.Flag)) {
+                                        gameStatus = game.isBomb(row, column);
+                                        if (gameStatus) {
+                                            logic.goBoom(bombs);
+                                            timer.stop();
+                                            restart.setBackground(loseRestart);
+                                            gameGrid.setMouseTransparent(true);
+                                        } else {
+                                            ArrayList<Button> emptyButtons = logic.calculateAllSurroundings(row, column, buttonLocation);
+                                            if (game.getStatus(row, column) == Markers.Empty) {
+                                                for (Button emptyButton : emptyButtons) {
+                                                    emptyButton.setBackground(flatCell);
+                                                }
                                             }
+                                            btn.setBackground(flatCell);
+                                            btn.setText(game.getStatus(row, column).getMarker());
                                         }
-                                        btn.setBackground(flatCell);
-                                        btn.setText(game.getStatus(row, column).getMarker());
                                     }
                                 }
-                            }
-                            if(mouseButton == MouseButton.SECONDARY){
-                                if(!(game.getStatus(row, column) == Markers.Flag)) {
-                                    logic.setFlag(btn, row, column, buttonLocation);
-                                } else if (game.getStatus(row, column) == Markers.Flag){
-                                    logic.removeFlag(btn, row, column);
+                                if (mouseButton == MouseButton.SECONDARY) {
+                                    if (!(game.getStatus(row, column) == Markers.Flag)) {
+                                        logic.setFlag(btn, row, column, buttonLocation);
+                                        bombsLeft.setText("" + game.getBombAmount());
+                                    } else if (game.getStatus(row, column) == Markers.Flag) {
+                                        logic.removeFlag(btn, row, column);
+                                        bombsLeft.setText("" + game.getBombAmount());
+                                    }
                                 }
+                                win = logic.win(buttonLocation);
                             }
-                        }
-                    });
+                        });
+
+                    if(win){
+                        restart.setBackground(winRestart);
+                        gameGrid.setMouseTransparent(true);
+                        timer.stop();
+                    }
+                    }
                 }
-            }
+
             stage.setScene(gameScene);
         });
+
         startLayout.getChildren().addAll(message, difficultySelect, confirm);
         Scene startScreen = new Scene(startLayout);
         restart.setOnMouseClicked((event) -> {
@@ -136,7 +184,7 @@ public class MineSweeperApplication extends Application {
                 start(stage);
             }catch(Exception e){
                 System.out.println("Error: " + e.getMessage());
-            };
+            }
         });
         stage.setTitle("MineSweeper");
         stage.setScene(startScreen);

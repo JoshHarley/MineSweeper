@@ -11,38 +11,43 @@ import java.util.Map;
 
 public class MineSweeperLogic {
     private final MineSweeper game;
+    Image blankCellImage = new Image("images/basicCell.png");
+    BackgroundImage blankCellBackImage =new BackgroundImage(blankCellImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
+    Background blankCell = new Background(blankCellBackImage);
+    Image image = new Image("images/flag.png");
+    BackgroundImage flagBackgroundImage = new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
+    Background flagBackground = new Background(flagBackgroundImage);
     public MineSweeperLogic(MineSweeper _game){
         this.game = _game;
     }
 
-    int bombAmount = game.getBombAmount();
     public void surroundingCheck(int x, int y) {
-        Markers bombs = Markers.Empty;
+        Markers notBombs = Markers.Empty;
         if(game.getStatus(x + 1, y) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
         if(game.getStatus(x + 1, y - 1) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
         if(game.getStatus(x + 1, y + 1) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
         if(game.getStatus(x, y - 1) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
         if(game.getStatus(x, y + 1) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
         if(game.getStatus(x - 1, y) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
         if(game.getStatus(x - 1, y - 1) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
         if(game.getStatus(x -1, y + 1) == Markers.Bomb){
-            bombs = bombs.next();
+            notBombs = notBombs.next();
         }
-        this.game.setStatus(x, y, bombs);
+        this.game.setStatus(x, y, notBombs);
     }
 
     public ArrayList<Button> calculateAllSurroundings(int x, int y, HashMap<Integer[], Button> map) {
@@ -142,29 +147,33 @@ public class MineSweeperLogic {
     }
 
     public void setFlag(Button button, int row, int column, Map<Integer[], Button> buttonLocation){
-        Image image = new Image("images/flag.png");
-        BackgroundImage flagBackgroundImage = new BackgroundImage(image, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
-        Background flagBackground = new Background(flagBackgroundImage);
         button.setBackground(flagBackground);
         Integer[] loc = new Integer[]{row, column};
         for(Integer[] key: buttonLocation.keySet()){
             if(Arrays.equals(key, loc)){
                 game.setPreviousStatus(row, column, game.getStatus(row, column));
+                break;
             }
         }
-        this.bombAmount--;
+        this.game.decrementBombAmount();
         game.setStatus(row, column, Markers.Flag);
     }
 
     public void removeFlag(Button button, int row, int column){
         Markers beforeFlag = game.getPreviousStatus(row, column);
-        Image blankCellImage = new Image("images/basicCell.png");
-        BackgroundImage blankCellBackImage =new BackgroundImage(blankCellImage, BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, new BackgroundSize(1.0, 1.0, true, true, false, false));
-        Background blankCell = new Background(blankCellBackImage);
         button.setBackground(blankCell);
-        this.bombAmount++;
+        this.game.incrementBombAmount();
         game.setStatus(row, column, beforeFlag);
     }
 
-
+    public boolean win(Map<Integer[], Button> map){
+        boolean win = true;
+        for(Integer[] bomb: map.keySet()){
+            if(game.getStatus(bomb[0], bomb[1]) == Markers.Bomb){
+                win = false;
+                break;
+            }
+        }
+        return win;
+    }
 }
