@@ -171,7 +171,7 @@ public class MineSweeperLogic {
         for(Integer[] bomb: map.keySet()){
             if(game.getStatus(bomb[0], bomb[1]) == Markers.Bomb){
                 win = false;
-                break;
+                return win;
             }
         }
         return win;
